@@ -2,57 +2,14 @@
 
 var chalk = require("chalk");
 var Command = require("../lib/command");
-var FirestoreDelete = require("../lib/firestore/copy");
+var FirestoreCopy = require("../lib/firestore/copy");
 var prompt = require("../lib/prompt");
 var requireAccess = require("../lib/requireAccess");
 
 var scopes = require("../lib/scopes");
 var utils = require("../lib/utils");
 
-var _getConfirmationMessage = function(deleteOp, options) {
-  if (options.allCollections) {
-    return (
-      "You are about to delete " +
-      chalk.bold.yellow.underline("YOUR ENTIRE DATABASE") +
-      ". Are you sure?"
-    );
-  }
-
-  if (deleteOp.isDocumentPath) {
-    // Recursive document delete
-    if (options.recursive) {
-      return (
-        "You are about to delete the document at " +
-        chalk.cyan(deleteOp.path) +
-        " and all of its subcollections. Are you sure?"
-      );
-    }
-
-    // Shallow document delete
-    return (
-      "You are about to delete the document at " + chalk.cyan(deleteOp.path) + ". Are you sure?"
-    );
-  }
-
-  // Recursive collection delete
-  if (options.recursive) {
-    return (
-      "You are about to delete all documents in the collection at " +
-      chalk.cyan(deleteOp.path) +
-      " and all of their subcollections. " +
-      "Are you sure?"
-    );
-  }
-
-  // Shallow collection delete
-  return (
-    "You are about to delete all documents in the collection at " +
-    chalk.cyan(deleteOp.path) +
-    ". Are you sure?"
-  );
-};
-
-module.exports = new Command("firestore:copy [path] [path]")
+module.exports = new Command("firestore:copy [source] [target]")
   .description("Copy Firestore documents and collections from one location to another.")
   .option(
     "-r, --recursive",
@@ -79,7 +36,7 @@ module.exports = new Command("firestore:copy [path] [path]")
   .before(requireAccess, [scopes.CLOUD_PLATFORM])
   .action(function(source, target, options) {
     // Guarantee path
-    if (!path || !target) {
+    if (!source || !target) {
       return utils.reject("Must specify a source path and a target path.", { exit: 1 });
     }
 
@@ -87,7 +44,7 @@ module.exports = new Command("firestore:copy [path] [path]")
       recursive: options.recursive,
       shallow: options.shallow,
       overwrite: options.overwrite,
-      skip: options.skip
+      skip: options.skip,
       batchSize: 50,
     });
 
